@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Institucional de los Aprendizajes - Colegio Galileo Galilei</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --header-bg: #0f354a;
+            --bg-light: #f1f5f8;
+            --card-bg: #ffffff;
+            --text-main: #0f354a;
+            --text-muted: #5c7285;
+            
+            --color-debajo: #d96b5c;
+            --color-basico: #e2b755;
+            --color-satisfactorio: #5ca48f;
+            --color-avanzado: #1d6a66;
+            
+            --border-radius: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg-light); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Pantalla de Login Institucional */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, var(--header-bg) 0%, #164e6d 100%);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .login-card {
+            background: white; padding: 36px 32px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+            text-align: center; max-width: 420px; width: 90%;
+        }
+        .login-badge { display: inline-block; background: #e5f0f4; color: var(--header-bg); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+        .login-card h2 { font-family: 'Montserrat', sans-serif; font-size: 20px; color: var(--header-bg); margin-bottom: 6px; font-weight: 800; }
+        .login-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.4; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--header-bg); margin-bottom: 5px; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; }
+        .form-input:focus { border-color: var(--color-satisfactorio); }
+        .btn-login {
+            background-color: var(--color-satisfactorio); color: white; border: none; padding: 12px 20px;
+            border-radius: 6px; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
+            cursor: pointer; width: 100%; margin-top: 8px; transition: background 0.2s;
+        }
+        .btn-login:hover { background-color: #4b8c79; }
+        .login-error { color: #dc3545; font-size: 12px; margin-top: 14px; display: none; font-weight: 500; }
+
+        /* Header */
+        header { background-color: var(--header-bg); color: white; padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; }
+        .header-title h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #a4c2d4; font-weight: 700; }
+        .header-title h1 { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 700; margin-top: 2px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .school-badge { background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-sync { background-color: #2b8a78; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-sync:hover { background-color: #216d5f; }
+        .btn-logout { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 7px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+        /* Layout */
+        .wrapper { display: flex; flex: 1; }
+        aside { width: 220px; background-color: #ffffff; border-right: 1px solid #e0e6ed; padding: 20px 15px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background-color: #f4f8fa; }
+        .nav-item.active { background-color: #e5f0f4; color: var(--text-main); font-weight: 700; }
+        .nav-circle { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--text-muted); flex-shrink: 0; }
+        .nav-item.active .nav-circle { background-color: var(--color-satisfactorio); border-color: var(--color-satisfactorio); }
+        .sidebar-footer { margin-top: auto; border-top: 1px solid #e0e6ed; padding-top: 15px; font-size: 11px; color: var(--text-muted); }
+        .sidebar-footer strong { display: block; color: var(--text-main); font-size: 13px; margin-top: 3px; }
+
+        main { flex: 1; padding: 25px 35px; overflow-y: auto; }
+        .page-title h2 { font-family: 'Montserrat', sans-serif; font-size: 25px; font-weight: 800; color: var(--text-main); }
+        .page-title p { font-size: 13px; color: var(--text-muted); margin-top: 3px; margin-bottom: 20px; }
+
+        /* Aviso planilla vacía */
+        .empty-banner { background-color: #fff8e6; border: 1px solid #f0d58c; color: #7a5a00; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: none; }
+
+        /* Filtros */
+        .filters-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 25px; }
+        .filter-card { background: var(--card-bg); border: 1px solid #dcdfe6; border-radius: var(--border-radius); padding: 10px 14px; }
+        .filter-card label { display: block; font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .filter-card select { width: 100%; border: none; outline: none; background: transparent; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; color: var(--text-main); cursor: pointer; }
+
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 25px; }
+        .kpi-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 15px 14px; border-left: 5px solid var(--text-muted); box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-top: 1px solid #eef2f5; border-right: 1px solid #eef2f5; border-bottom: 1px solid #eef2f5; }
+        .kpi-card.red { border-left-color: var(--color-debajo); }
+        .kpi-card.gold { border-left-color: var(--color-basico); }
+        .kpi-card.green { border-left-color: var(--color-satisfactorio); }
+        .kpi-card.darkgreen { border-left-color: var(--color-avanzado); }
+        .kpi-card.blue { border-left-color: #2b8a78; }
+        .kpi-card h4 { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-card .val { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 800; color: var(--text-main); margin-top: 4px; }
+        .kpi-card.red .val { color: var(--color-debajo); }
+        .kpi-card.green .val { color: var(--color-satisfactorio); }
+        .kpi-card.darkgreen .val { color: var(--color-avanzado); }
+        .kpi-card .sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Paneles */
+        .panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .panel { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; border: 1px solid #e3e8ef; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+        .panel h3 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-main); }
+        .panel p.panel-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; margin-bottom: 20px; }
+
+        .stacked-bar-container { display: flex; height: 42px; border-radius: 4px; overflow: hidden; margin-bottom: 20px; background: #eef2f5; }
+        .bar-seg { height: 100%; transition: width 0.4s ease; }
+        .seg-debajo { background-color: var(--color-debajo); }
+        .seg-basico { background-color: var(--color-basico); }
+        .seg-satisfactorio { background-color: var(--color-satisfactorio); }
+        .seg-avanzado { background-color: var(--color-avanzado); }
+
+        .legend-list { display: flex; flex-direction: column; gap: 11px; }
+        .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+        .legend-left { display: flex; align-items: center; gap: 10px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* Tabla histórica */
+        .table-wrapper { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th { background-color: #f4f7f9; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; border-bottom: 2px solid #e0e6ed; }
+        td { padding: 11px 12px; border-bottom: 1px solid #eef2f5; font-weight: 500; }
+        tr:hover td { background-color: #fafcfd; }
+
+        footer { background-color: #e2ebf0; padding: 12px 30px; font-size: 11px; color: var(--text-main); border-top: 1px solid #d5e0e6; display: flex; justify-content: space-between; }
+
+        @media (max-width: 900px) {
+            .wrapper { flex-direction: column; }
+            aside { width: 100%; border-right: none; border-bottom: 1px solid #e0e6ed; flex-direction: row; align-items: center; flex-wrap: wrap; }
+            .sidebar-footer { margin-top: 0; border-top: none; padding-top: 0; margin-left: auto; }
+            .filters-grid, .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .panels-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE ACCESO -->
+    <div id="login-screen">
+        <div class="login-card">
+            <span class="login-badge">Red Educativa Vaneduc</span>
+            <h2 id="login-school-title">Colegio Galileo Galilei</h2>
+            <p>Acceso exclusivo para el equipo directivo y referentes institucionales.</p>
+            <form onsubmit="validarAcceso(event)">
+                <div class="form-group">
+                    <label for="user-email">Correo Institucional</label>
+                    <input type="email" id="user-email" class="form-input" placeholder="nombre.apellido@uai.edu.ar" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-pin">Código de Acceso</label>
+                    <input type="password" id="user-pin" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login">Ingresar al Tablero</button>
+            </form>
+            <div id="login-error-msg" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DEL TABLERO -->
+    <div id="app-content" style="display: none; flex-direction: column; min-height: 100vh;">
+        <header>
+            <div class="header-title">
+                <h2>RED EDUCATIVA VANEDUC</h2>
+                <h1>Tablero Institucional de los Aprendizajes</h1>
+            </div>
+            <div class="header-right">
+                <span class="school-badge" id="header-school-name">Colegio Galileo Galilei</span>
+                <button class="btn-sync" onclick="forzarSincronizacion()">🔄 Sincronizar Datos</button>
+                <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="wrapper">
+            <aside>
+                <div class="nav-item active" id="nav-resumen" onclick="cambiarVista('resumen')">
+                    <div class="nav-circle"></div> Resumen por Ciclo
+                </div>
+                <div class="nav-item" id="nav-historico" onclick="cambiarVista('historico')">
+                    <div class="nav-circle"></div> Evolución entre Ciclos
+                </div>
+
+                <div class="sidebar-footer">
+                    INSTITUCIÓN
+                    <strong id="sidebar-school-name">Colegio Galileo Galilei</strong>
+                    <span style="display:block; margin-top:6px;">Usuario: <span id="user-logged-display" style="font-weight:700; color:var(--text-main);"></span></span>
+                </div>
+            </aside>
+
+            <main>
+                <div class="page-title">
+                    <h2 id="titulo-vista">Resumen de aprendizajes</h2>
+                    <p id="subtitulo-vista">Consulta institucional por evaluación, nivel, área y ciclo lectivo</p>
+                </div>
+
+                <div class="empty-banner" id="empty-banner">
+                    <strong>Planilla conectada sin registros aún:</strong> Agregá las filas de resultados en la hoja <em>Base_Aprendizajes_Galileo_Galilei</em> y hacé clic en <strong>🔄 Sincronizar Datos</strong> para visualizar los indicadores.
+                </div>
+
+                <!-- FILTROS -->
+                <div class="filters-grid">
+                    <div class="filter-card">
+                        <label for="select-evaluacion">EVALUACIÓN</label>
+                        <select id="select-evaluacion" onchange="actualizarOpcionesDinamicas(); renderizarVista();"></select>
+                    </div>
+                    <div class="filter-card">
+                        <label for="select-nivel">NIVEL</label>
+                        <select id="select-nivel" onchange="actualizarOpcionesDinamicas(); renderizarVista();"></select>
+                    </div>
+                    <div class="filter-card">
+                        <label for="select-area">ÁREA</label>
+                        <select id="select-area" onchange="actualizarOpcionesDinamicas(); renderizarVista();"></select>
+                    </div>
+                    <div class="filter-card" id="card-filter-anio">
+                        <label for="select-anio">CICLO LECTIVO</label>
+                        <select id="select-anio" onchange="renderizarVista();"></select>
+                    </div>
+                </div>
+
+                <!-- VISTA 1: RESUMEN POR CICLO -->
+                <div id="vista-resumen">
+                    <div class="kpi-grid">
+                        <div class="kpi-card red">
+                            <h4>POR DEBAJO DEL BÁSICO</h4>
+                            <div class="val" id="kpi-debajo">--%</div>
+                            <div class="sub">nivel inicial</div>
+                        </div>
+                        <div class="kpi-card gold">
+                            <h4>BÁSICO</h4>
+                            <div class="val" id="kpi-basico">--%</div>
+                            <div class="sub">nivel medio</div>
+                        </div>
+                        <div class="kpi-card green">
+                            <h4>SATISFACTORIO</h4>
+                            <div class="val" id="kpi-satisfactorio">--%</div>
+                            <div class="sub">nivel objetivo</div>
+                        </div>
+                        <div class="kpi-card darkgreen">
+                            <h4>AVANZADO</h4>
+                            <div class="val" id="kpi-avanzado">--%</div>
+                            <div class="sub">nivel destacado</div>
+                        </div>
+                        <div class="kpi-card blue">
+                            <h4>VAR. VS CICLO ANTERIOR</h4>
+                            <div class="val" id="kpi-variacion">-- pp</div>
+                            <div class="sub">dif. interanual (Sat+Av)</div>
+                        </div>
+                    </div>
+
+                    <div class="panels-grid">
+                        <div class="panel">
+                            <h3>Distribución de Desempeño</h3>
+                            <p class="panel-sub">Resultados del operativo y ciclo seleccionado</p>
+
+                            <div class="stacked-bar-container">
+                                <div class="bar-seg seg-debajo" id="bar-debajo" style="width: 0%;"></div>
+                                <div class="bar-seg seg-basico" id="bar-basico" style="width: 0%;"></div>
+                                <div class="bar-seg seg-satisfactorio" id="bar-satisfactorio" style="width: 0%;"></div>
+                                <div class="bar-seg seg-avanzado" id="bar-avanzado" style="width: 0%;"></div>
+                            </div>
+
+                            <div class="legend-list">
+                                <div class="legend-item"><div class="legend-left"><div class="legend-dot seg-debajo"></div><span>Por debajo del básico</span></div><strong id="val-debajo">0%</strong></div>
+                                <div class="legend-item"><div class="legend-left"><div class="legend-dot seg-basico"></div><span>Básico</span></div><strong id="val-basico">0%</strong></div>
+                                <div class="legend-item"><div class="legend-left"><div class="legend-dot seg-satisfactorio"></div><span>Satisfactorio</span></div><strong id="val-satisfactorio">0%</strong></div>
+                                <div class="legend-item"><div class="legend-left"><div class="legend-dot seg-avanzado"></div><span>Avanzado</span></div><strong id="val-avanzado">0%</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <h3>Tendencia Histórica</h3>
+                            <p class="panel-sub">Evolución de niveles consolidados (Sat+Av) vs nivel inicial</p>
+                            <div style="height: 220px; width: 100%;">
+                                <canvas id="chartTendencia"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA 2: EVOLUCIÓN ENTRE CICLOS -->
+                <div id="vista-historico" style="display: none;">
+                    <div class="panels-grid" style="grid-template-columns: 1.2fr 1fr;">
+                        <div class="panel">
+                            <h3>Comparativa de Desempeño por Edición</h3>
+                            <p class="panel-sub" id="subtitulo-barras">Distribución de los 4 niveles en cada ciclo evaluado</p>
+                            <div style="height: 260px; width: 100%;">
+                                <canvas id="chartComparativoCiclos"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <h3>Tabla Histórica de Resultados</h3>
+                            <p class="panel-sub">Detalle numérico de todas las ediciones registradas</p>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Ciclo</th>
+                                            <th>Debajo</th>
+                                            <th>Básico</th>
+                                            <th>Satisf.</th>
+                                            <th>Avanz.</th>
+                                            <th>Sat + Av</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-historico-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <span><strong>SINCRONIZACIÓN EN TIEMPO REAL CON PLANILLA INSTITUCIONAL</strong></span>
+            <span id="status-sync">Última lectura: pendiente</span>
+        </footer>
+    </div>
+
+    <script>
+        // =========================================================================
+        // CONFIGURACIÓN DE LA ESCUELA: COLEGIO GALILEO GALILEI
+        // =========================================================================
+        const NOMBRE_ESCUELA = "Colegio Galileo Galilei";
+        const SHEET_ID = "1oZF-xGbqXFGydY9c4g8UqcNtC9-9Vnsjufu746q5Jxs";
+        const PIN_ESCUELA = "Galileo2026";
+
+        const CORREOS_AUTORIZADOS = [
+            "nicolasmartin.bettiga@vaneduc.edu.ar",
+            "patricia.zinno@uai.edu.ar",
+            "mariaconstanza.ortiz@uai.edu.ar",
+            "normapatricia.zanelli@uai.edu.ar"
+        ];
+        // =========================================================================
+
+        const SESSION_KEY = `vaneduc_auth_${SHEET_ID}`;
+        const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+        let dbRows = [];
+        let vistaActual = 'resumen';
+        let chartLinea = null;
+        let chartBarras = null;
+
+        window.addEventListener('load', () => {
+            document.getElementById('login-school-title').innerText = NOMBRE_ESCUELA;
+            document.getElementById('header-school-name').innerText = NOMBRE_ESCUELA;
+            document.getElementById('sidebar-school-name').innerText = NOMBRE_ESCUELA;
+            document.title = `Tablero de Aprendizajes - ${NOMBRE_ESCUELA}`;
+
+            const savedUser = sessionStorage.getItem(SESSION_KEY);
+            if (savedUser) {
+                iniciarSesionUI(savedUser);
+            }
+        });
+
+        function validarAcceso(event) {
+            event.preventDefault();
+            const email = document.getElementById('user-email').value.trim().toLowerCase();
+            const pin = document.getElementById('user-pin').value.trim();
+            const errorDiv = document.getElementById('login-error-msg');
+
+            const esDominioValido = email.endsWith("@vaneduc.edu.ar") || email.endsWith("@uai.edu.ar");
+            const estaEnLista = CORREOS_AUTORIZADOS.map(c => c.toLowerCase()).includes(email);
+
+            if (!esDominioValido || !estaEnLista || pin !== PIN_ESCUELA) {
+                errorDiv.innerText = "Correo no autorizado para esta institución o código de acceso incorrecto.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            sessionStorage.setItem(SESSION_KEY, email);
+            iniciarSesionUI(email);
+        }
+
+        function iniciarSesionUI(email) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'flex';
+            document.getElementById('user-logged-display').innerText = email.split('@')[0];
+            forzarSincronizacion();
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem(SESSION_KEY);
+            window.location.reload();
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(l => l.trim().length > 0);
+            return lines.map(line => {
+                const values = [];
+                let insideQuote = false, entry = '';
+                for (let char of line) {
+                    if (char === '"') insideQuote = !insideQuote;
+                    else if (char === ',' && !insideQuote) {
+                        values.push(entry.trim().replace(/^"|"$/g, ''));
+                        entry = '';
+                    } else entry += char;
+                }
+                values.push(entry.trim().replace(/^"|"$/g, ''));
+                return values;
+            });
+        }
+
+        async function forzarSincronizacion() {
+            const statusEl = document.getElementById('status-sync');
+            statusEl.innerText = "Sincronizando...";
+            try {
+                const timestamp = Date.now();
+                const res = await fetch(`${SHEET_CSV_URL}&nocache=${timestamp}`);
+                if (!res.ok) throw new Error("Error HTTP");
+                const text = await res.text();
+                const parsed = parseCSV(text);
+
+                const headers = (parsed[0] || []).map(h => h.toLowerCase());
+                const tieneColumnaColegio = headers.length > 0 && (headers[0].includes('colegio') || headers[0].includes('escuela'));
+
+                dbRows = parsed.slice(1).map(r => {
+                    const offset = tieneColumnaColegio ? 1 : 0;
+                    return {
+                        evaluacion: (r[0 + offset] || '').trim(),
+                        nivel: (r[1 + offset] || '').trim(),
+                        area: (r[2 + offset] || '').trim(),
+                        anio: (r[3 + offset] || '').trim(),
+                        debajo: parseFloat((r[4 + offset] || '0').replace('%', '').replace(',', '.')),
+                        basico: parseFloat((r[5 + offset] || '0').replace('%', '').replace(',', '.')),
+                        satisfactorio: parseFloat((r[6 + offset] || '0').replace('%', '').replace(',', '.')),
+                        avanzado: parseFloat((r[7 + offset] || '0').replace('%', '').replace(',', '.'))
+                    };
+                }).filter(item => item.evaluacion && item.anio);
+
+                document.getElementById('empty-banner').style.display = dbRows.length === 0 ? 'block' : 'none';
+
+                poblarSelectoresBase();
+                actualizarOpcionesDinamicas();
+                renderizarVista();
+
+                const ahora = new Date();
+                statusEl.innerText = `Sincronizado: ${ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            } catch (err) {
+                console.error("Error al sincronizar:", err);
+                statusEl.innerText = "Error de conexión con Google Sheets (verificar permisos de lectura)";
+            }
+        }
+
+        function poblarSelectoresBase() {
+            const evals = [...new Set(dbRows.map(r => r.evaluacion))];
+            const niveles = [...new Set(dbRows.map(r => r.nivel))];
+            const areas = [...new Set(dbRows.map(r => r.area))];
+
+            llenarSelect('select-evaluacion', evals.length ? evals : ['Aprender']);
+            llenarSelect('select-nivel', niveles.length ? niveles : ['Primaria', 'Secundaria']);
+            llenarSelect('select-area', areas.length ? areas : ['Matemática', 'Lengua']);
+        }
+
+        function llenarSelect(id, opciones) {
+            const sel = document.getElementById(id);
+            const prev = sel.value;
+            sel.innerHTML = '';
+            opciones.forEach(op => {
+                const opt = document.createElement('option');
+                opt.value = op;
+                opt.innerText = op;
+                sel.appendChild(opt);
+            });
+            if (opciones.includes(prev)) sel.value = prev;
+        }
+
+        function actualizarOpcionesDinamicas() {
+            const evalSel = document.getElementById('select-evaluacion').value;
+            const nivelSel = document.getElementById('select-nivel').value;
+            const areaSel = document.getElementById('select-area').value;
+
+            const filtrados = dbRows.filter(r =>
+                r.evaluacion.toLowerCase() === evalSel.toLowerCase() &&
+                r.nivel.toLowerCase() === nivelSel.toLowerCase() &&
+                r.area.toLowerCase() === areaSel.toLowerCase()
+            );
+
+            const anios = [...new Set(filtrados.map(r => r.anio))].sort().reverse();
+            llenarSelect('select-anio', anios.length ? anios : ['Sin datos']);
+        }
+
+        function cambiarVista(vista) {
+            vistaActual = vista;
+            document.getElementById('nav-resumen').classList.toggle('active', vista === 'resumen');
+            document.getElementById('nav-historico').classList.toggle('active', vista === 'historico');
+
+            document.getElementById('vista-resumen').style.display = vista === 'resumen' ? 'block' : 'none';
+            document.getElementById('vista-historico').style.display = vista === 'historico' ? 'block' : 'none';
+            document.getElementById('card-filter-anio').style.opacity = vista === 'resumen' ? '1' : '0.45';
+            document.getElementById('select-anio').disabled = (vista !== 'resumen');
+
+            if (vista === 'resumen') {
+                document.getElementById('titulo-vista').innerText = 'Resumen de aprendizajes';
+                document.getElementById('subtitulo-vista').innerText = 'Consulta institucional por evaluación, nivel, área y ciclo lectivo';
+            } else {
+                document.getElementById('titulo-vista').innerText = 'Evolución entre ciclos anteriores';
+                document.getElementById('subtitulo-vista').innerText = 'Comparativa longitudinal de ediciones de la misma evaluación';
+            }
+
+            renderizarVista();
+        }
+
+        function renderizarVista() {
+            const evalSel = document.getElementById('select-evaluacion').value;
+            const nivelSel = document.getElementById('select-nivel').value;
+            const areaSel = document.getElementById('select-area').value;
+            const anioSel = document.getElementById('select-anio').value;
+
+            const serieHistorica = dbRows
+                .filter(r =>
+                    r.evaluacion.toLowerCase() === evalSel.toLowerCase() &&
+                    r.nivel.toLowerCase() === nivelSel.toLowerCase() &&
+                    r.area.toLowerCase() === areaSel.toLowerCase()
+                )
+                .sort((a, b) => a.anio.localeCompare(b.anio));
+
+            if (vistaActual === 'resumen') {
+                const actual = serieHistorica.find(r => r.anio === anioSel);
+                actualizarKPIs(actual, serieHistorica);
+                dibujarGraficoLinea(serieHistorica);
+            } else {
+                dibujarComparativaCiclos(serieHistorica, evalSel, nivelSel, areaSel);
+            }
+        }
+
+        function actualizarKPIs(actual, serieHistorica) {
+            if (!actual) {
+                ['kpi-debajo', 'kpi-basico', 'kpi-satisfactorio', 'kpi-avanzado'].forEach(id => document.getElementById(id).innerText = '--%');
+                document.getElementById('kpi-variacion').innerText = '-- pp';
+                ['bar-debajo', 'bar-basico', 'bar-satisfactorio', 'bar-avanzado'].forEach(id => document.getElementById(id).style.width = '0%');
+                ['val-debajo', 'val-basico', 'val-satisfactorio', 'val-avanzado'].forEach(id => document.getElementById(id).innerText = '0%');
+                return;
+            }
+
+            const idx = serieHistorica.findIndex(r => r.anio === actual.anio);
+            let diffPp = '0.0';
+            if (idx > 0) {
+                const anterior = serieHistorica[idx - 1];
+                const satAvAct = actual.satisfactorio + actual.avanzado;
+                const satAvAnt = anterior.satisfactorio + anterior.avanzado;
+                diffPp = (satAvAct - satAvAnt).toFixed(1);
+            }
+
+            document.getElementById('kpi-debajo').innerText = `${actual.debajo}%`;
+            document.getElementById('kpi-basico').innerText = `${actual.basico}%`;
+            document.getElementById('kpi-satisfactorio').innerText = `${actual.satisfactorio}%`;
+            document.getElementById('kpi-avanzado').innerText = `${actual.avanzado}%`;
+            document.getElementById('kpi-variacion').innerText = idx > 0 ? `${diffPp > 0 ? '+' : ''}${diffPp} pp` : 'Base';
+
+            document.getElementById('bar-debajo').style.width = `${actual.debajo}%`;
+            document.getElementById('bar-basico').style.width = `${actual.basico}%`;
+            document.getElementById('bar-satisfactorio').style.width = `${actual.satisfactorio}%`;
+            document.getElementById('bar-avanzado').style.width = `${actual.avanzado}%`;
+
+            document.getElementById('val-debajo').innerText = `${actual.debajo}%`;
+            document.getElementById('val-basico').innerText = `${actual.basico}%`;
+            document.getElementById('val-satisfactorio').innerText = `${actual.satisfactorio}%`;
+            document.getElementById('val-avanzado').innerText = `${actual.avanzado}%`;
+        }
+
+        function dibujarGraficoLinea(serie) {
+            if (chartLinea) chartLinea.destroy();
+            const ctx = document.getElementById('chartTendencia').getContext('2d');
+
+            const labels = serie.map(r => r.anio);
+            const dataSatAv = serie.map(r => (r.satisfactorio + r.avanzado).toFixed(1));
+            const dataDebajo = serie.map(r => r.debajo.toFixed(1));
+
+            chartLinea = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Satisfactorio + Avanzado (%)', data: dataSatAv, borderColor: '#1d6a66', backgroundColor: '#1d6a66', borderWidth: 2.5, pointRadius: 5, tension: 0.2 },
+                        { label: 'Por debajo del básico (%)', data: dataDebajo, borderColor: '#d96b5c', backgroundColor: '#d96b5c', borderWidth: 2.5, pointRadius: 5, tension: 0.2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+
+        function dibujarComparativaCiclos(serie, evalSel, nivelSel, areaSel) {
+            document.getElementById('subtitulo-barras').innerText = `${evalSel} · ${nivelSel} · ${areaSel} (${NOMBRE_ESCUELA})`;
+
+            const tbody = document.getElementById('tabla-historico-body');
+            tbody.innerHTML = '';
+            serie.forEach(r => {
+                const satAv = (r.satisfactorio + r.avanzado).toFixed(1);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${r.anio}</strong></td>
+                    <td style="color: var(--color-debajo); font-weight: 700;">${r.debajo}%</td>
+                    <td>${r.basico}%</td>
+                    <td style="color: var(--color-satisfactorio); font-weight: 700;">${r.satisfactorio}%</td>
+                    <td style="color: var(--color-avanzado); font-weight: 700;">${r.avanzado}%</td>
+                    <td><strong>${satAv}%</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (chartBarras) chartBarras.destroy();
+            const ctx = document.getElementById('chartComparativoCiclos').getContext('2d');
+            const labels = serie.map(r => `Ciclo ${r.anio}`);
+
+            chartBarras = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Por debajo del básico', data: serie.map(r => r.debajo), backgroundColor: '#d96b5c', borderRadius: 4 },
+                        { label: 'Básico', data: serie.map(r => r.basico), backgroundColor: '#e2b755', borderRadius: 4 },
+                        { label: 'Satisfactorio', data: serie.map(r => r.satisfactorio), backgroundColor: '#5ca48f', borderRadius: 4 },
+                        { label: 'Avanzado', data: serie.map(r => r.avanzado), backgroundColor: '#1d6a66', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
